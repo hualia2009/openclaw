@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   metadata: vi.fn(),
   requiresApproval: vi.fn(),
   approval: vi.fn(),
+  toolPolicy: vi.fn(),
 }));
 vi.mock("../agents/agent-bundle-mcp-manager-api.js", () => ({
   acquireSessionMcpRuntime: mocks.direct,
@@ -65,7 +66,9 @@ vi.mock("./mcp-app-tool-approval.js", () => ({ requestMcpAppToolApproval: mocks.
 vi.mock("./operator-run-authority.js", () => ({
   captureGatewayOperatorRunAuthority: mocks.source,
 }));
-vi.mock("./session-resource-tool-policy.js", () => ({ resolveSessionResourceToolPolicy: vi.fn() }));
+vi.mock("./session-resource-tool-policy.js", () => ({
+  resolveSessionResourceToolPolicy: mocks.toolPolicy,
+}));
 vi.mock("./session-row-projection-access.js", () => ({
   getSessionRowProjection: () => ({ sharingTarget: () => ({ entry, storePath: "/store" }) }),
 }));
@@ -157,6 +160,12 @@ describe("cold App request admission", () => {
     expect(mocks.approval).toHaveBeenCalledOnce();
     expect(mocks.approval).toHaveBeenCalledWith(
       expect.objectContaining({ serverName: "demo", toolName: "show", input }),
+    );
+    expect(mocks.toolPolicy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolName: "demo_show",
+        toolMeta: expect.objectContaining({ mcp: expect.objectContaining({ toolName: "show" }) }),
+      }),
     );
     expect(assertion).toBeTypeOf("function");
     expect(() => assertion?.()).not.toThrow();
